@@ -2,6 +2,7 @@
 
 namespace App\Services;
 use App\Traits\ConsumesExternalServices;
+use Illuminate\Http\Request;
 
 class PayPalService
 {
@@ -21,8 +22,6 @@ class PayPalService
     public function resolveAuthorization(&$queryParams, &$formParams, &$headers)
     {
         $headers['Authorization'] = $this->resolverAccessToken();
-        
-
     }
 
     public function decodeResponse($response)
@@ -31,8 +30,43 @@ class PayPalService
     }
 
     public function resolverAccessToken(){
-        $credentials = base64_decode("{$this->clientId}:{$this->clientSecret}");
+        $credentials = base64_encode("{$this->clientId}:{$this->clientSecret}");
         return "Basic {$credentials}";
+    }
+
+    public function handlePayment(Request $request)
+    {
+        $order = $this->createOrder($request->value, $request->currency);
+
+        $orderLinks = collect($order->links);
+
+        $aprrove = $orderLinks->where('rel', 'approve')->first();
+
+        session()->put('approvalId', $order->id);
+
+
+
+        return redirect($aprrove->href);
+    }
+
+    public function handleApproval()
+    {
+        if (session()->has('approvalId'))
+        {
+            $approvalId = session()->get('approvalId');
+
+            $payment = $this->capturePayment($approvalId);
+
+            $name = $payment->payer->name->given_name;
+            $payment = $payment->purchase_units[0]->payments->captures[0]->amount;
+            $amount = $payment ->value;
+            $currency = $payment->currency_code;
+
+
+            return redirect()->route('home')->withErrors(['payment' => "Thanks, {$name}. We received your {$amount}{$currency} payment."]);
+        }
+
+        return redirect()->route('home')->withErrors('We cannot capture yoyr payment. Try Again, please');
     }
 
     public function createOrder($value, $currency)
@@ -47,7 +81,7 @@ class PayPalService
                     0 => [
                         'amount' => [
                             'currency_code' => strtoupper($currency),
-                            'value' => $value,
+                            'value' => round($value * $factor = $this->resolveFactor($currency)) / $factor,
                         ]
                     ]
                         ],
@@ -63,6 +97,31 @@ class PayPalService
             [],
             $isJsonRequest = true,
         );
+    }
+
+    public function capturePayment($approvalId)
+    {
+        return $this->makeRequest(
+            'POST',
+            "/v2/checkout/orders/{$approvalId}/capture",
+            [],
+            [],
+            [
+                'Content-Type' => 'application/json',
+            ],
+        );
+    }
+
+    public function resolveFactor($currency)
+    {
+        $zeroDecimalCurrencies = ['JPY'];
+
+        if(in_array(strtoupper($currency), $zeroDecimalCurrencies)){
+            return 1;
+        }
+        else{
+            return 100;
+        }
     }
 
 }
