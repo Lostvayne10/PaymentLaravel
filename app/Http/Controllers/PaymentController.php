@@ -27,6 +27,8 @@ class PaymentController extends Controller
 
         $request->validate($rules);
 
+        
+
         $paymentPlatform = $this->paymentPlatformResolver
                     ->resolverService($request->payment_platform);       
                     

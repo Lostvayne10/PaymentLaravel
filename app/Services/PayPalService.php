@@ -63,7 +63,7 @@ class PayPalService
             $currency = $payment->currency_code;
 
 
-            return redirect()->route('home')->withErrors(['payment' => "Thanks, {$name}. We received your {$amount}{$currency} payment."]);
+            return redirect()->route('home')->withSuccess(['payment' => "Thanks, {$name}. We received your {$amount}{$currency} payment."]);
         }
 
         return redirect()->route('home')->withErrors('We cannot capture yoyr payment. Try Again, please');
