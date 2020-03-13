@@ -56,6 +56,14 @@ class StripeService
             $paymentIntentId = session()->get('paymentIntentId');
             $confirmation = $this->confirmPayment($paymentIntentId);
 
+            if($confirmation->status === 'requires_action')
+            {
+                $clientSecret = $confirmation->client_secret;
+                return view('stripe.3d-secure')->with([
+                    'clientSecret' => $clientSecret,
+                ]);
+            }
+
             if($confirmation->status === 'succeeded')
             {
                 $name = $confirmation->charges->data[0]->billing_details->name;
@@ -76,16 +84,6 @@ class StripeService
         return redirect()
         ->route('home')
         ->withErrors('We were unable to confirm your payment. Try again, please.');
-    }
-
-    public function createOrder($value, $currency)
-    {
-        
-    }
-
-    public function capturePayment($approvalId)
-    {
-        
     }
 
     public function createIntent($value, $currency, $paymentMethod)

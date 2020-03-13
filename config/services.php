@@ -13,11 +13,23 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'currency_conversion' => [
+        'base_uri' =>       env('CURRENCY_CONVERSION_BASE_URI'),
+        'api_Key' =>      env('CURRENCY_CONVERSION_API_KEY'),    
+    ],
 
     'mailgun' => [
         'domain' => env('MAILGUN_DOMAIN'),
         'secret' => env('MAILGUN_SECRET'),
         'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
+    ],
+
+    'mercadopago' => [
+        'base_uri' => env('MERCADOPAGO_BASE_URI'),
+        'key'      => env('MERCADOPAGO_KEY'),
+        'secret'   => env('MERCADOPAGO_SECRET'),   
+        'class'    => App\Services\MercadoPagoService::class,  
+        'base_currency' => 'mxn',    
     ],
 
     'paypal' => [
