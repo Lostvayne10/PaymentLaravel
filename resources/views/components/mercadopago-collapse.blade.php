@@ -54,6 +54,7 @@
 
 
 <input type="hidden" name="card_network" id="cardNetwork">
+<input type="hidden" name="card_token" id="cardToken">
 
 
 
@@ -75,10 +76,28 @@
             { "bin": cardNumber.value.substring(0,6) }, 
             function(status, response){
                 const CardNetwork = document.getElementById("cardNetwork");
-
                 cardNetwork.value = response[0].id;
-
         });
     }
 </script>
+<script>
+    const mercadoPagoForm = document.getElementById("paymentform");
+    mercadoPagoForm.addEventListener('submit', function(e) {
+        if (mercadoPagoForm.elements.payment_platform.value === "{{ $paymentplatform->id }}") {
+            e.preventDefault();
+            mercadoPago.createToken(mercadoPagoForm, function(status, response) {
+                if (status != 200 && status != 201) {
+                    const errors = document.getElementById("paymentErrors");
+                    errors.textContent = response.cause[0].description;
+                } else {
+                    const cardToken = document.getElementById("cardToken");
+                    setCardNetwork();
+                    cardToken.value = response.id;
+                    mercadoPagoForm.submit();
+                }
+            });
+        }
+    });
+</script>
+
 @endpush
